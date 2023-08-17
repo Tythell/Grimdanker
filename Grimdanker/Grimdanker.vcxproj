@@ -140,11 +140,14 @@
     <ClCompile Include="src\Imgui\imgui_tables.cpp" />
     <ClCompile Include="src\Imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Unit.cpp" />
     <ClCompile Include="src\Utility\CommonDialogs.cpp" />
     <ClCompile Include="src\Utility\Popup.cpp" />
     <ClCompile Include="src\Utility\StringHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Unit.h" />
+    <ClInclude Include="src\Utility\Clipboard.h" />
     <ClInclude Include="src\DxWinHelper.h" />
     <ClInclude Include="src\Imgui\imconfig.h" />
     <ClInclude Include="src\Imgui\imgui.h" />

@@ -1,286 +1,20 @@
 #include <vector>
 #include <iostream>
 #include "DxWinHelper.h"
-#include "Utility/Popup.h"
-//#include "Utility/CommonDialogs.h"
+#include "Utility/Clipboard.h"
 #include <sstream> 
 #include <algorithm>
 #include<ctime>
 #include <Windows.h>
 #include <d3d11.h>
-
-std::string GetClipboardText()
-{
-	// Try opening the clipboard
-	if (!OpenClipboard(nullptr))
-	{
-		Popup::Error("fuck you 1");
-		return "nuu";
-	}
-
-	// Get handle of clipboard object for ANSI text
-	HANDLE hData = GetClipboardData(CF_TEXT);
-	if (hData == nullptr)
-	{
-		Popup::Error("fuck you 2");
-		return "nuu";
-	}
-
-	// Lock the handle to get the actual text pointer
-	char* pszText = static_cast<char*>(GlobalLock(hData));
-	if (pszText == nullptr)
-	{
-		Popup::Error("fuck you 3");
-		return "nuu";
-	}
-
-	// Save text in a string class instance
-	std::string text(pszText);
-
-	// Release the lock
-	GlobalUnlock(hData);
-
-	// Release the clipboard
-	CloseClipboard();
-
-	return text;
-}
-
-void toClipboard(const std::string& s) {
-	OpenClipboard(0);
-	EmptyClipboard();
-	HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE, s.size()+1);
-	if (!hg) {
-		CloseClipboard();
-		return;
-	}
-	memcpy(GlobalLock(hg), s.c_str(), s.size()+1);
-	GlobalUnlock(hg);
-	SetClipboardData(CF_TEXT, hg);
-	CloseClipboard();
-	GlobalFree(hg);
-}
+#include "Unit.h"
 
 using namespace std;
 using uint = unsigned int;
 
-struct Weapon
-{
-	string name;
-	string range;
-	string attacks;
-	string ap;
-	vector<string> effects;
-
-	string GetAsString()
-	{
-		string output = "";
-		output += name + ": ";
-		if (range.size() > 0) output += range + " ";
-		output += attacks + " ";
-		if (ap.size() > 0) output += ap + " ";
-		for (int i = 0; i < effects.size(); i++)
-		{
-			output += effects[i] + " ";
-		}
-		return output;
-	}
-};
-
-// Fear less, Fearless, Hero, Tough(12), 1x Brood Leader(Pheromones), 1x Hive Protector(Psy-Barrier), 1x Wings(Ambush, Flying)
-
-std::vector<std::string> SeparatePassives(std::string fullstring)
-{
-	std::vector<std::string> v;
-	stringstream ss(fullstring);
-	string input = "";
-	while (ss >> input)
-	{
-		string word = input;
-		bool foundBracket = input.find(')') != -1;
-		while (word.find(',') == -1 && !foundBracket)
-		{
-			if (!(ss >> input))
-				break;
-			foundBracket = input.find(')') != -1;
-			word += " " + input;
-		}
-		v.emplace_back(word);
-	}
-	return v;
-}
-
-class Unit
-{
-public:
-	void figureTitle(string line1, bool removeUpgradeName)
-	{
-		int firstSeparator = line1.find_first_of('|');
-		m_title = line1.substr(0, firstSeparator);
 
 
-		string stripped(line1);
-		for (int i = 0; i < 2; i++)
-		{
-			firstSeparator = stripped.find_first_of('|') + 1;
-			stripped = stripped.substr(firstSeparator);
-		}
-		m_passives = SeparatePassives(stripped);
-		for (int i = 0; i < m_passives.size(); i++)
-		{
-			if (m_passives[i][0] == ' ')
-			{
-				m_passives[i] = m_passives[i].substr(1);
-			}
-		}
-		//m_passives = Dialogs::CharsToStringsVector(stripped.c_str(), stripped.size(), ',');
 
-		for (int i = 0; i < m_passives.size(); i++)
-		{
-			if (m_passives[i].find("Tough(") != -1)
-			{
-				m_title += "T" + m_passives[i].substr(6);
-				break;
-			}
-		}
-		for (int i = 0; i < m_passives.size(); i++)
-		{
-			if (m_passives[i][m_passives[i].size()-1] == ',')
-			{
-				m_passives[i] = m_passives[i].substr(0, m_passives[i].size() - 1);
-				printf("");
-			}
-			if (removeUpgradeName && IsUpgrade(m_passives[i]))
-			{
-				if (m_upgradeIndex == -1) m_upgradeIndex = i;
-
-				string word = m_passives[i];
-				int firstBracket = word.find_first_of('(');
-				word = word.substr(firstBracket + 1);
-
-				int size = word.size();
-
-				word = word.substr(0, word.size() - 1);
-				m_passives[i] = word;
-				printf("");
-			}
-		}
-
-		printf("");
-	}
-	bool IsUpgrade(string passiveName) const
-	{
-		int bracketIndex = passiveName.find_first_of('(');
-		if (bracketIndex == -1) return false;
-		else if (!StringHelper::IsNumber(passiveName[bracketIndex+1]))
-		{
-			cout << passiveName << " is upgrade.\n";
-			return true;
-		}
-		return false;
-	}
-	void figureWeapons(string line2)
-	{
-		stringstream ss(line2);
-		bool nEndOfLine = true;
-		string newInput;
-
-		while (nEndOfLine)
-		{
-			Weapon weapon;
-			
-			weapon.name = FindFullName(ss, newInput);
-
-			if (newInput.find('\"') != -1)
-			{
-				weapon.range = newInput.substr(1);
-				ss >> newInput;
-			}
-			if (newInput.find('(') != -1)
-			{
-				newInput = newInput.substr(1);
-			}
-			if (newInput.find(','))
-			{
-				newInput = newInput.substr(0, newInput.size() - 1);
-			}
-			if (newInput.find(')') != -1) newInput = newInput.substr(0, newInput.size() - 1);
-			weapon.attacks = newInput;
-			ss >> newInput;
-			if (newInput.find("AP(") != -1)
-			{
-				weapon.ap = "AP" + StringHelper::extractNumberStr(newInput);
-				ss >> newInput;
-			}
-			// Fusion Rifle (12", A1, AP(4), Deadly(3), Psyched(35))
-			// effects
-			
-			string convert = "k";
-			//convert = newInput[find - 1];
-			while (true)
-			{
-				weapon.effects.emplace_back(newInput + " ");
-
-				int find = newInput.find("),");
-				bool yesComma = find != -1;
-				bool foundNumber = false;
-				if (yesComma)
-				{
-					foundNumber = StringHelper::IsNumber(newInput[find - 1]);
-				}
-
-				if (yesComma && !foundNumber)
-				{
-					// clear final ) char from word
-					int numEffects = weapon.effects.size();
-					int numChars = weapon.effects[numEffects - 1].size();
-
-					weapon.effects[numEffects - 1] = weapon.effects[numEffects - 1].substr(0, numChars - 3);
-
-					break;
-				}
-
-				if (!(ss >> newInput))
-				{
-					printf("");
-					nEndOfLine = false;
-					break;
-				}
-				find = newInput.find("),");
-				if (find != -1)
-				{
-					convert = newInput[find - 1];
-				}
-			}
-			m_weapons.emplace_back(weapon);
-
-		}
-		printf("");
-	}
-	string m_title;
-	vector<string> m_passives;
-	vector<Weapon> m_weapons;
-
-	int GetUpgradeIndex() const { return m_upgradeIndex; }
-private:
-	int m_upgradeIndex = -1;
-	string FindFullName(stringstream& ss, string& lastinput)
-	{
-		string newInput;
-		string fullname;
-		while (true)
-		{
-			ss >> newInput;
-			if (newInput.find("(") != -1) // if end of name break
-			{
-				lastinput = newInput;
-				return fullname;
-			}
-
-			fullname += newInput + " ";
-		}
-	}
-};
 
 vector<Unit> GetUnit(string text, bool clearUpgradeName)
 {
@@ -292,7 +26,7 @@ vector<Unit> GetUnit(string text, bool clearUpgradeName)
 
 	int n = line1.size();
 
-	vector<Unit> units;
+	std::vector<Unit> units;
 
 	while (std::getline(ss1, line1))
 	{
@@ -335,7 +69,119 @@ void GetColor(ImVec4& clr, char* cstr, int charArrSize)
 	std::swap(cstr[3], cstr[5]);
 }
 
+void mainWindow(uint currentWidth, uint currentHeight)
+{
+	ImGui::SetNextWindowSize(ImVec2((float)currentWidth, (float)currentHeight));
+	ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Once);
 
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove /*| ImGuiWindowFlags_NoBackground*/;
+	ImGui::Begin("mainwidow", 0, flags);
+
+	static const UINT buffSize = 3000;
+	static char buffer[buffSize]{ "" };
+	ImGui::InputTextMultiline("##Input", buffer, buffSize);
+	static bool clearUpgradeNames = true;
+	ImGui::Checkbox("Clear Upgrade Names", &clearUpgradeNames);
+
+	static char colorCStr[9];
+	static ImVec4 upgradeColor{ 0.f, 1.f, 1.f, 1.f };
+	GetColor(upgradeColor, colorCStr, 9);
+
+	static vector<Unit> units;
+	if (ImGui::Button("Copy from input"))
+	{
+		if (buffer[0] == '+') units = GetUnit(buffer, clearUpgradeNames);
+		else Popup::Info("lmao fail");
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Copy from clipboard"))
+	{
+		string clipboard = GetClipboardText();
+		if (clipboard[0] == '+')
+		{
+			clipboard.erase(std::remove(clipboard.begin(), clipboard.end(), '\r'), clipboard.end());
+			units = GetUnit(clipboard, clearUpgradeNames);
+		}
+		else
+			Popup::Info("Invalid text");
+	}
+	//uint unitSize = units.size();
+	if (units.size() > 0)
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("Clear")) units.clear();
+		for (int i = 0; i < units.size(); i++)
+		{
+			ImGui::Text(units[i].m_title.c_str());
+			std::string displayStr = "";
+			std::string displayUpgrStr = "";
+			int nOfPassives = units[i].m_passives.size();
+			for (int j = 0; j < nOfPassives; j++)
+			{
+				int upgradeIdx = units[i].GetUpgradeIndex();
+				if (j < upgradeIdx || upgradeIdx == -1)
+					displayStr += units[i].m_passives[j] + ", ";
+				else
+					displayUpgrStr += units[i].m_passives[j] + ", ";
+
+			}
+			ImGui::Text(displayStr.c_str());
+			ImGui::SameLine();
+			ImGui::TextColored(upgradeColor, displayUpgrStr.c_str());
+
+			for (int j = 0; j < units[i].m_weapons.size(); j++)
+			{
+				displayStr = "";
+				displayStr += units[i].m_weapons[j].name + ": ";
+				displayStr += units[i].m_weapons[j].range;
+				displayStr += " " + units[i].m_weapons[j].attacks + " ";
+				displayStr += units[i].m_weapons[j].ap;
+				for (int k = 0; k < units[i].m_weapons[j].effects.size(); k++)
+				{
+					displayStr += " " + units[i].m_weapons[j].effects[k];
+				}
+				ImGui::Text(displayStr.c_str());
+			}
+			string outputStr = "";
+			std::string btnStr = "Title to clipboard##" + to_string(i);
+			if (ImGui::Button(btnStr.c_str()))
+			{
+				outputStr = units[i].m_title;
+
+				toClipboard(outputStr);
+			}
+			btnStr = "Desc to clipboard##" + to_string(i);
+
+
+			if (ImGui::Button(btnStr.c_str()))
+			{
+				for (int j = 0; j < units[i].m_passives.size(); j++)
+				{
+					if (units[i].GetUpgradeIndex() == j)
+					{
+						outputStr += "[" + string(colorCStr) + "]";
+					}
+
+					outputStr += units[i].m_passives[j];
+					if (j != units[i].m_passives.size() - 1)
+					{
+						outputStr += ", ";
+					}
+
+				}
+				outputStr += "[-]\n\n";
+
+				for (int j = 0; j < units[i].m_weapons.size(); j++)
+				{
+					outputStr += units[i].m_weapons[j].GetAsString() + "\n";
+				}
+				toClipboard(outputStr);
+			}
+		}
+	}
+	ImGui::End();
+}
 
 #ifdef _DEBUG
 int main()
@@ -352,7 +198,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		L"Garrosh did everything wrong",
 		L"Dabbin dab dab",
 		L"Probably (not) bug-free!",
-		L"My favourute color ia blue... no YELLOWWWWW!",
+		L"My favourute color is blue... no YELLOWWWWW!",
 		L"To seek the holy grail!",
 		L"and he rolls TWO ONES FAIL FAIL FAIL",
 		L"Remeber Knög Karola",
@@ -367,8 +213,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		L"Program made by Tythell!",
 	};
 
-	if (true)
+	bool enableWindow = true;
+	if (enableWindow)
 	{
+		// Window and DX11 code taken and modified from imgui example
+
 		HWND hwnd;
 		WNDCLASSEX wc;
 
@@ -382,8 +231,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 
-		bool show_demo_window = true;
-		bool show_another_window = false;
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 		bool done = false;
 		while (!done)
@@ -416,8 +263,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 				Resolution::g_ResizeWidth = Resolution::g_ResizeHeight = 0;
 
-
-
 				CreateRenderTarget(d3d);
 			}
 
@@ -426,122 +271,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			{
-				ImGui::SetNextWindowSize(ImVec2((float)currentWidth, (float)currentheight));
-				ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Once);
+			mainWindow(currentWidth, currentheight);
 
-				ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove /*| ImGuiWindowFlags_NoBackground*/;
-
-
-				ImGui::Begin("mainwidow", 0, flags);
-
-				static const UINT buffSize = 3000;
-				static char buffer[buffSize]{ "" };
-				ImGui::InputTextMultiline("##Input", buffer, buffSize);
-				static bool clearUpgradeNames = true;
-				ImGui::Checkbox("Clear Upgrade Names", &clearUpgradeNames);
-
-				static char colorCStr[9];
-				static ImVec4 upgradeColor{ 0.f,1.f,1.f,1.f };
-				GetColor(upgradeColor, colorCStr, 9);
-
-				static vector<Unit> units;
-				if (ImGui::Button("Copy from input"))
-				{
-					if (buffer[0] == '+') units = GetUnit(buffer, clearUpgradeNames);
-					else Popup::Info("lmao fail");
-				}
-				
-				ImGui::SameLine();
-				if (ImGui::Button("Copy from clipboard"))
-				{
-					string clipboard = GetClipboardText();
-					if (clipboard[0] == '+')
-					{
-						clipboard.erase(std::remove(clipboard.begin(), clipboard.end(), '\r'), clipboard.end());
-						units = GetUnit(clipboard, clearUpgradeNames);
-					}
-					else
-						Popup::Info("Invalid text");
-				}
-				//uint unitSize = units.size();
-				if (units.size() > 0)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button("Clear")) units.clear();
-					for (int i = 0; i < units.size(); i++)
-					{
-						ImGui::Text(units[i].m_title.c_str());
-						std::string displayStr = "";
-						std::string displayUpgrStr = "";
-						int nOfPassives = units[i].m_passives.size();
-						for (int j = 0; j < nOfPassives; j++)
-						{
-							int upgradeIdx = units[i].GetUpgradeIndex();
-							if (j < upgradeIdx || upgradeIdx == -1)
-								displayStr += units[i].m_passives[j] + ", ";
-							else
-								displayUpgrStr += units[i].m_passives[j] + ", ";
-							
-						}
-						ImGui::Text(displayStr.c_str());
-						ImGui::SameLine();
-						ImGui::TextColored(upgradeColor, displayUpgrStr.c_str());
-						
-						for (int j = 0; j < units[i].m_weapons.size(); j++)
-						{
-							displayStr = "";
-							displayStr += units[i].m_weapons[j].name + ": ";
-							displayStr += units[i].m_weapons[j].range;
-							displayStr += " " + units[i].m_weapons[j].attacks + " ";
-							displayStr += units[i].m_weapons[j].ap;
-							for (int k = 0; k < units[i].m_weapons[j].effects.size(); k++)
-							{
-								displayStr += " " + units[i].m_weapons[j].effects[k];
-							}
-							ImGui::Text(displayStr.c_str());
-						}
-						string outputStr = "";
-						std::string btnStr = "Title to clipboard##" + to_string(i);
-						if (ImGui::Button(btnStr.c_str()))
-						{
-							outputStr = units[i].m_title;
-
-							toClipboard(outputStr);
-						}
-						btnStr = "Desc to clipboard##" + to_string(i);
-
-
-						if (ImGui::Button(btnStr.c_str()))
-						{
-							for (int j = 0; j < units[i].m_passives.size(); j++)
-							{
-								if (units[i].GetUpgradeIndex() == j)
-								{
-									outputStr += "[" + string(colorCStr) + "]";
-								}
-
-								outputStr += units[i].m_passives[j];
-								if (j != units[i].m_passives.size()-1)
-								{
-									outputStr += ", ";
-								}
-
-							}
-							outputStr += "[-]\n\n";
-
-							for (int j = 0; j < units[i].m_weapons.size(); j++)
-							{
-								outputStr += units[i].m_weapons[j].GetAsString() + "\n";
-							}
-							toClipboard(outputStr);
-						}
-					}
-				}
-
-				ImGui::End();
-				//ImGui::ShowDemoWindow();
-			}
+			//ImGui::ShowDemoWindow();
 
 			// Rendering
 			ImGui::Render();
@@ -564,7 +296,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		cleanup(hwnd, wc, d3d);
 	}
 
-	
+
 
 	//system("pause");
 	return 0;
