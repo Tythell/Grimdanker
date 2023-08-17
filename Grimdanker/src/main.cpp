@@ -9,14 +9,9 @@
 #include <d3d11.h>
 #include "Unit.h"
 
-using namespace std;
 using uint = unsigned int;
 
-
-
-
-
-vector<Unit> GetUnit(string text, bool clearUpgradeName)
+std::vector<Unit> GetUnit(string text, bool clearUpgradeName)
 {
 	stringstream ss1(text);
 
@@ -87,7 +82,7 @@ void mainWindow(uint currentWidth, uint currentHeight)
 	static ImVec4 upgradeColor{ 0.f, 1.f, 1.f, 1.f };
 	GetColor(upgradeColor, colorCStr, 9);
 
-	static vector<Unit> units;
+	static std::vector<Unit> units;
 	if (ImGui::Button("Copy from input"))
 	{
 		if (buffer[0] == '+') units = GetUnit(buffer, clearUpgradeNames);
@@ -144,14 +139,14 @@ void mainWindow(uint currentWidth, uint currentHeight)
 				ImGui::Text(displayStr.c_str());
 			}
 			string outputStr = "";
-			std::string btnStr = "Title to clipboard##" + to_string(i);
+			std::string btnStr = "Title to clipboard##" + std::to_string(i);
 			if (ImGui::Button(btnStr.c_str()))
 			{
 				outputStr = units[i].m_title;
 
 				toClipboard(outputStr);
 			}
-			btnStr = "Desc to clipboard##" + to_string(i);
+			btnStr = "Desc to clipboard##" + std::to_string(i);
 
 
 			if (ImGui::Button(btnStr.c_str()))
@@ -189,7 +184,7 @@ int main()
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 #endif // _DEBUG
 {
-	wstring subtitles[] = {
+	std::wstring subtitles[] = {
 		L"Now with extra grimdank!",
 		L"Det var en fågel",
 		L"Roger hette han",
@@ -225,7 +220,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 		srand(time(0));
 
-		wstring title = L"Grimdanker - " + subtitles[rand() % ARRAYSIZE(subtitles)];
+		std::wstring title = L"Grimdanker - " + subtitles[rand() % ARRAYSIZE(subtitles)];
 
 		SetupShit(hwnd, wc, d3d, title);
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
