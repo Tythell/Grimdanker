@@ -165,7 +165,9 @@ void mainWindow(uint currentWidth, uint currentHeight)
 					}
 
 				}
-				outputStr += "[-]\n\n";
+				if (units[i].GetUpgradeIndex() != -1)
+					outputStr += "[-]";
+				outputStr += "\n\n";
 
 				for (int j = 0; j < units[i].m_weapons.size(); j++)
 				{
@@ -202,7 +204,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		L"Subscribe to the fucking channel!",
 		L"Sub to Xisumavoid!",
 		L"Sub to Alfabusa!",
-		L"3D-printing minis is probably legal, it should be!",
+		L"Is 3D-printing minis legal?, I hope so!",
 		L"Alfabusa gang should make more narrative battle reports.",
 		L"For great hair care!",
 		L"Program made by Tythell!",
@@ -267,6 +269,16 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 			ImGui::NewFrame();
 
 			mainWindow(currentWidth, currentheight);
+
+			ImGui::Begin("test window");
+
+			if (ImGui::Button("test clipboard"))
+			{
+				std::string clipboardtest = "hej\nenter\nheh";
+				toClipboard(clipboardtest);
+			}
+
+			ImGui::End();
 
 			//ImGui::ShowDemoWindow();
 
