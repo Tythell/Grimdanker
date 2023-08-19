@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include "Unit.h"
+#include <fstream>
 
 using uint = unsigned int;
 
@@ -82,6 +83,22 @@ void mainWindow(uint currentWidth, uint currentHeight)
 	static ImVec4 upgradeColor{ 0.f, 1.f, 1.f, 1.f };
 	GetColor(upgradeColor, colorCStr, 9);
 
+	static bool hasRead = false;
+
+	if (!hasRead)
+	{
+		std::ifstream reader("input.txt");
+
+		if (reader.is_open())
+		{
+			string fileLine = "";
+			reader.read(buffer, ARRAYSIZE(buffer));
+
+			reader.close();
+		}
+		hasRead = true;
+	}
+
 	static std::vector<Unit> units;
 	if (ImGui::Button("Copy from input"))
 	{
@@ -108,73 +125,80 @@ void mainWindow(uint currentWidth, uint currentHeight)
 		if (ImGui::Button("Clear")) units.clear();
 		for (int i = 0; i < units.size(); i++)
 		{
-			ImGui::Text(units[i].m_title.c_str());
-			std::string displayStr = "";
-			std::string displayUpgrStr = "";
-			int nOfPassives = units[i].m_passives.size();
-			for (int j = 0; j < nOfPassives; j++)
+			string unitTitle = units[i].m_title + "##" +  std::to_string(i);
+			if (ImGui::TreeNode(unitTitle.c_str()))
 			{
-				int upgradeIdx = units[i].GetUpgradeIndex();
-				if (j < upgradeIdx || upgradeIdx == -1)
-					displayStr += units[i].m_passives[j] + ", ";
-				else
-					displayUpgrStr += units[i].m_passives[j] + ", ";
-
-			}
-			ImGui::Text(displayStr.c_str());
-			ImGui::SameLine();
-			ImGui::TextColored(upgradeColor, displayUpgrStr.c_str());
-
-			for (int j = 0; j < units[i].m_weapons.size(); j++)
-			{
-				displayStr = "";
-				displayStr += units[i].m_weapons[j].name + ": ";
-				displayStr += units[i].m_weapons[j].range;
-				displayStr += " " + units[i].m_weapons[j].attacks + " ";
-				displayStr += units[i].m_weapons[j].ap;
-				for (int k = 0; k < units[i].m_weapons[j].effects.size(); k++)
+				//ImGui::Text(units[i].m_title.c_str());
+				std::string displayStr = "";
+				std::string displayUpgrStr = "";
+				int nOfPassives = units[i].m_passives.size();
+				for (int j = 0; j < nOfPassives; j++)
 				{
-					displayStr += " " + units[i].m_weapons[j].effects[k];
+					int upgradeIdx = units[i].GetUpgradeIndex();
+					if (j < upgradeIdx || upgradeIdx == -1)
+						displayStr += units[i].m_passives[j] + ", ";
+					else
+						displayUpgrStr += units[i].m_passives[j] + ", ";
+
 				}
 				ImGui::Text(displayStr.c_str());
-			}
-			string outputStr = "";
-			std::string btnStr = "Title to clipboard##" + std::to_string(i);
-			if (ImGui::Button(btnStr.c_str()))
-			{
-				outputStr = units[i].m_title;
-
-				toClipboard(outputStr);
-			}
-			btnStr = "Desc to clipboard##" + std::to_string(i);
-
-
-			if (ImGui::Button(btnStr.c_str()))
-			{
-				for (int j = 0; j < units[i].m_passives.size(); j++)
-				{
-					if (units[i].GetUpgradeIndex() == j)
-					{
-						outputStr += "[" + string(colorCStr) + "]";
-					}
-
-					outputStr += units[i].m_passives[j];
-					if (j != units[i].m_passives.size() - 1)
-					{
-						outputStr += ", ";
-					}
-
-				}
-				if (units[i].GetUpgradeIndex() != -1)
-					outputStr += "[-]";
-				outputStr += "\n\n";
+				ImGui::SameLine();
+				ImGui::TextColored(upgradeColor, displayUpgrStr.c_str());
 
 				for (int j = 0; j < units[i].m_weapons.size(); j++)
 				{
-					outputStr += units[i].m_weapons[j].GetAsString() + "\n";
+					displayStr = "";
+					displayStr += units[i].m_weapons[j].name + ": ";
+					displayStr += units[i].m_weapons[j].range;
+					displayStr += " " + units[i].m_weapons[j].attacks + " ";
+					displayStr += units[i].m_weapons[j].ap;
+					for (int k = 0; k < units[i].m_weapons[j].effects.size(); k++)
+					{
+						displayStr += " " + units[i].m_weapons[j].effects[k];
+					}
+					ImGui::Text(displayStr.c_str());
 				}
-				toClipboard(outputStr);
+				string outputStr = "";
+				std::string btnStr = "Title to clipboard##" + std::to_string(i);
+				if (ImGui::Button(btnStr.c_str()))
+				{
+					outputStr = units[i].m_title;
+
+					toClipboard(outputStr);
+				}
+				btnStr = "Desc to clipboard##" + std::to_string(i);
+
+
+				if (ImGui::Button(btnStr.c_str()))
+				{
+					for (int j = 0; j < units[i].m_passives.size(); j++)
+					{
+						if (units[i].GetUpgradeIndex() == j)
+						{
+							outputStr += "[" + string(colorCStr) + "]";
+						}
+
+						outputStr += units[i].m_passives[j];
+						if (j != units[i].m_passives.size() - 1)
+						{
+							outputStr += ", ";
+						}
+
+					}
+					if (units[i].GetUpgradeIndex() != -1)
+						outputStr += "[-]";
+					outputStr += "\n\n";
+
+					for (int j = 0; j < units[i].m_weapons.size(); j++)
+					{
+						outputStr += units[i].m_weapons[j].GetAsString() + "\n";
+					}
+					toClipboard(outputStr);
+				}
+
+				ImGui::TreePop();
 			}
+			
 		}
 	}
 	ImGui::End();
@@ -208,6 +232,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		L"Alfabusa gang should make more narrative battle reports.",
 		L"For great hair care!",
 		L"Program made by Tythell!",
+		L"Check out Rapid Images!",
 	};
 
 	bool enableWindow = true;
@@ -269,16 +294,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 			ImGui::NewFrame();
 
 			mainWindow(currentWidth, currentheight);
-
-			ImGui::Begin("test window");
-
-			if (ImGui::Button("test clipboard"))
-			{
-				std::string clipboardtest = "hej\nenter\nheh";
-				toClipboard(clipboardtest);
-			}
-
-			ImGui::End();
 
 			//ImGui::ShowDemoWindow();
 

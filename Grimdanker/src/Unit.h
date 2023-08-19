@@ -53,5 +53,5 @@ public:
 	int GetUpgradeIndex() const { return m_upgradeIndex; }
 private:
 	int m_upgradeIndex = -1;
-	string FindFullName(stringstream& ss, string& lastinput);
+	string FindFullName(stringstream& ss, string& lastinput, bool& endOfLine);
 };

@@ -85,47 +85,99 @@ bool Unit::IsUpgrade(string passiveName) const
 	return false;
 }
 
+//#define READINPUT if (!(ss >> newInput)) nEndOfLine = false  
+
+#define READSTREAM if (ss >> newInput) {} \
+else { \
+ m_weapons.emplace_back(weapon); \
+ continue; \
+} \
+
 void Unit::figureWeapons(string line2)
 {
 	stringstream ss(line2);
 	bool nEndOfLine = true;
 	string newInput;
 
-	while (nEndOfLine)
+	while (true)
 	{
 		Weapon weapon;
 
-		weapon.name = FindFullName(ss, newInput);
+		bool endIt = false;
+		weapon.name = FindFullName(ss, newInput, endIt);
+		if (endIt)
+		{
+			break;
+		}
+
+		bool endOfWeapon = false;
 
 		if (newInput.find('\"') != -1)
 		{
 			weapon.range = newInput.substr(1);
-			ss >> newInput;
+			READSTREAM;
 		}
-		if (newInput.find('(') != -1)
+		// number of attacks
+		// CCW (A2), Gun (12", A5)
 		{
-			newInput = newInput.substr(1);
+			string numAttacks = newInput;
+			int firstBrack = numAttacks.find('(');
+			int lastBrack = numAttacks.find(')');
+
+			int hasBracket = int(firstBrack != -1);
+
+			numAttacks = numAttacks.substr(hasBracket, (unsigned int)lastBrack - hasBracket);
+			weapon.attacks = numAttacks;
+			endOfWeapon = lastBrack != -1;
+
+			if (newInput.find(')') != -1)
+			{
+				m_weapons.emplace_back(weapon);
+				continue;
+			}
+
+			READSTREAM;
+
 		}
-		if (newInput.find(','))
-		{
-			newInput = newInput.substr(0, newInput.size() - 1);
-		}
-		if (newInput.find(')') != -1) newInput = newInput.substr(0, newInput.size() - 1);
-		weapon.attacks = newInput;
-		ss >> newInput;
-		if (newInput.find("AP(") != -1)
+
+		if (/*!endOfWeapon && */newInput.find("AP(") != -1)
 		{
 			weapon.ap = "AP" + StringHelper::extractNumberStr(newInput);
-			ss >> newInput;
-		}
-		// Fusion Rifle (12", A1, AP(4), Deadly(3), Psyched(35))
-		// effects
+			char num = newInput[newInput.size() - 3];
 
-		string convert = "k";
-		//convert = newInput[find - 1];
+			if (newInput.find(')') != -1 && !StringHelper::IsNumber(num))
+			{
+				m_weapons.emplace_back(weapon);
+				continue;
+			}
+			READSTREAM;
+		}
+		// Fusion Rifle (A1), Dumb rock(12", A5, rending, yeeh)
+		// effects
 		while (true)
 		{
-			weapon.effects.emplace_back(newInput + " ");
+			weapon.effects.emplace_back(newInput);
+			
+			char num = newInput[newInput.size() - 3];
+
+			if (newInput.find(')') != -1 && !StringHelper::IsNumber(num))
+			{
+				weapon.effects[weapon.effects.size() - 1] = newInput.substr(0, newInput.size() - 1);
+				break;
+			}
+			if (!(ss >> newInput)) break;
+			//READSTREAM;
+		}
+			
+
+		m_weapons.emplace_back(weapon);
+		/*while (true)
+		{
+			if (newInput.find(',') != -1)
+			{
+				weapon.effects.emplace_back(newInput + " ");
+			}
+
 
 			int find = newInput.find("),");
 			bool yesComma = find != -1;
@@ -158,19 +210,23 @@ void Unit::figureWeapons(string line2)
 				convert = newInput[find - 1];
 			}
 		}
-		m_weapons.emplace_back(weapon);
+		m_weapons.emplace_back(weapon);*/
 
 	}
 	printf("");
 }
 
-string Unit::FindFullName(stringstream& ss, string& lastinput)
+string Unit::FindFullName(stringstream& ss, string& lastinput, bool& endOfLine)
 {
 	string newInput;
 	string fullname;
 	while (true)
 	{
-		ss >> newInput;
+		if (!(ss >> newInput))
+		{
+			endOfLine = true;
+			return fullname;
+		}
 		if (newInput.find("(") != -1) // if end of name break
 		{
 			lastinput = newInput;
