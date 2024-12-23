@@ -10,8 +10,6 @@
 #include "Unit.h"
 #include <fstream>
 
-using uint = unsigned int;
-
 std::vector<Unit> GetUnit(string text, bool clearUpgradeName)
 {
 	stringstream ss1(text);
@@ -44,10 +42,9 @@ std::vector<Unit> GetUnit(string text, bool clearUpgradeName)
 	return units;
 }
 
-void GetColor(ImVec4& clr, char* cstr, int charArrSize)
+void GetColorHexStr(ImVec4& clr, char* cstr, int charArrSize)
 {
 	ImGui::SameLine();
-	//static float upgradeClrF[4]{ 0.f, 1.f, 1.f, 1.f };
 	ImGuiColorEditFlags clrEditFlags = ImGuiColorEditFlags_NoInputs;
 
 	ImGui::ColorEdit4("Upgrade color", &clr.x, clrEditFlags);
@@ -55,8 +52,6 @@ void GetColor(ImVec4& clr, char* cstr, int charArrSize)
 	uint colorByte = ImGui::ColorConvertFloat4ToU32(clr);
 
 	sprintf_s(cstr, charArrSize, "%08x", colorByte);
-
-	char temp[2] = { cstr[0], cstr[1] };
 
 	// flip bytes
 	std::swap(cstr[0], cstr[6]);
@@ -81,7 +76,7 @@ void mainWindow(uint currentWidth, uint currentHeight)
 
 	static char colorCStr[9];
 	static ImVec4 upgradeColor{ 0.f, 1.f, 1.f, 1.f };
-	GetColor(upgradeColor, colorCStr, 9);
+	GetColorHexStr(upgradeColor, colorCStr, 9);
 
 	static bool hasRead = false;
 
@@ -208,8 +203,21 @@ void mainWindow(uint currentWidth, uint currentHeight)
 int main()
 #else
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
-#endif // _DEBUG
 {
+#endif // _DEBUG
+
+	bool enableConsole = false;
+	FILE* fp = NULL;
+	if (enableConsole)
+	{
+		AllocConsole();
+		freopen_s(&fp, "conin$", "r", stdin);
+		freopen_s(&fp, "conout$", "w", stdout);
+		freopen_s(&fp, "conout$", "w", stderr);
+		printf("Console enabled:\n");
+	}
+	
+
 	std::wstring subtitles[] = {
 		L"Now with extra grimdank!",
 		L"Det var en fågel",
@@ -252,6 +260,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		SetupShit(hwnd, wc, d3d, title);
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+		io.IniFilename = NULL;
+		io.LogFilename = NULL;
+
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 		bool done = false;
@@ -259,6 +270,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		{
 			// Poll and handle messages (inputs, window resize, etc.)
 			// See the WndProc() function below for our to dispatch events to the Win32 backend.
+			if (GetAsyncKeyState(VK_NUMPAD6))
+			{
+				MessageBoxW(NULL, L"popup!", L"popup!", MB_OK);
+				Sleep(500);
+			}
+
 			MSG msg;
 			while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
 			{
@@ -318,7 +335,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 		cleanup(hwnd, wc, d3d);
 	}
 
-
+	if (enableConsole && fp != NULL)
+	{
+		fclose(fp);
+		FreeConsole();
+	}
 
 	//system("pause");
 	return 0;

@@ -6,7 +6,7 @@
 using string = std::string;
 using stringstream = std::stringstream;
 
-
+//uchar diceRoll(uchar)
 
 inline std::vector<std::string> SeparatePassives(std::string fullstring)
 {
