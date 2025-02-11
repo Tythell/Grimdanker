@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
+    <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7cea060c-113b-45c2-b970-cc3437f823ec}</ProjectGuid>
-    <RootNamespace>Grimdanker</RootNamespace>
+    <ProjectGuid>{eb737fb2-d77e-4399-980d-21e33e7b887c}</ProjectGuid>
+    <RootNamespace>Client</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -104,7 +104,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,45 +119,21 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\DxWinHelper.cpp" />
-    <ClCompile Include="src\Imgui\imgui.cpp" />
-    <ClCompile Include="src\Imgui\imgui_demo.cpp" />
-    <ClCompile Include="src\Imgui\imgui_draw.cpp" />
-    <ClCompile Include="src\Imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="src\Imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="src\Imgui\imgui_tables.cpp" />
-    <ClCompile Include="src\Imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\Danker.h" />
-    <ClCompile Include="src\Utility\CommonDialogs.cpp" />
-    <ClCompile Include="src\Utility\Popup.cpp" />
-    <ClCompile Include="src\Utility\StringHelper.cpp" />
+    <ProjectReference Include="..\Grimdanker\Grimdanker.vcxproj">
+      <Project>{7cea060c-113b-45c2-b970-cc3437f823ec}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Utility\Clipboard.h" />
-    <ClInclude Include="src\DxWinHelper.h" />
-    <ClInclude Include="src\Imgui\imconfig.h" />
-    <ClInclude Include="src\Imgui\imgui.h" />
-    <ClInclude Include="src\Imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="src\Imgui\imgui_impl_win32.h" />
-    <ClInclude Include="src\Imgui\imgui_internal.h" />
-    <ClInclude Include="src\Imgui\imstb_rectpack.h" />
-    <ClInclude Include="src\Imgui\imstb_textedit.h" />
-    <ClInclude Include="src\Imgui\imstb_truetype.h" />
-    <ClInclude Include="src\Utility\COMException.h" />
-    <ClInclude Include="src\Utility\CommonDialogs.h" />
-    <ClInclude Include="src\Utility\Popup.h" />
-    <ClInclude Include="src\Utility\StringHelper.h" />
+    <ClCompile Include="Client.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
